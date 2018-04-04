@@ -95,8 +95,6 @@ class TestLIMEExplainer(unittest.TestCase):
         self.X = [name for name in self.frame.columns
                   if name not in [self.y, self.row_id]]
 
-    """
-
     def test_generate_local_sample(self):
 
         row = self.frame.iloc[0, :]
@@ -247,16 +245,12 @@ class TestLIMEExplainer(unittest.TestCase):
         rc = explainer._plot_local_contrib(h2o.H2OFrame(pd.DataFrame(row).T))
         self.assertEqual(rc.shape, (26, 3))
 
-    """
-
     def test_explain_w_discretize(self):
 
         row_id = 0
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         explainer.explain(row_id)
-
-    """
 
     def test_explain_w_o_discretize(self):
 
@@ -266,7 +260,6 @@ class TestLIMEExplainer(unittest.TestCase):
                                   discretize=False)
         explainer.explain(row_id)
 
-    """
 
     def tearDown(self):
         self.frame = None
