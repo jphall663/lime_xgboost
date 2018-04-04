@@ -28,7 +28,7 @@ import xgboost as xgb
 class LIMEExplainer(object):
 
     """ Basic framework for building Local, Interpretable, Model-agnostic
-    Explanations for XGBoost models. Supports regression and binomial
+    Explanations (LIMEs) for XGBoost models. Supports regression and binomial
     classification. Requires h2o, numpy, pandas, and xgboost packages.
 
     :ivar training_frame: Pandas DataFrame containing the row to be explained,
@@ -44,14 +44,14 @@ class LIMEExplainer(object):
     :ivar seed: Random seed for enhanced reproducibility. Integer, default
                 12345.
     :ivar print_: Whether to print a table of local contributions (reason
-                  codes) and plot `top_n` Local contributions (reason codes).
+                  codes) and plot `top_n` local contributions (reason codes).
                   Boolean, default True.
     :ivar top_n: Number of highest and lowest Local contributions (reason codes)
                  to plot. Integer, default 5.
-    :ivar reason_code_values: Pandas DataFrame containing Local contributions
+    :ivar reason_code_values: Pandas DataFrame containing local contributions
                               (reason codes) for `model` and row to be
                               explained.
-    :ivar lime_r2: R^2 statistic for trained local linear model, float.
+    :ivar lime_r2: R\ :sup:`2` statistic for trained local linear model, float.
     :ivar lime: Trained local linear model, H2OGeneralizedLinearEstimator.
     :ivar bins_dict: Dictionary of bins used to discretize the LIME sample.
 
