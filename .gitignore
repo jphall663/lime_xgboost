@@ -1,0 +1,7 @@
+*.DS_Store
+.idea
+__pycache__
+data/*.csv
+data/*.xls
+notebooks/.ipynb_checkpoints
+test/test.model
