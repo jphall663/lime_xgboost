@@ -315,6 +315,7 @@ class LIMEExplainer(object):
                                                 'Local Contribution': contrib,
                                                 'Sign': contrib > 0},
                                                ignore_index=True)
+
                 # sort
                 local_contrib_frame.sort_values(by='Local Contribution',
                                                 inplace=True)
