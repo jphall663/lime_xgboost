@@ -8,6 +8,11 @@ Simple package for creating LIMEs for XGBoost
     :undoc-members:
     :show-inheritance:
 
+.. autoclass:: lime_xgboost.lime_explainer.LIMEExplainer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 LIMEExplainer Examples
 ^^^^^^^^^^^^^^^^^^^^^^
 
