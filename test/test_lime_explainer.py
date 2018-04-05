@@ -180,7 +180,15 @@ class TestLIMEExplainer(unittest.TestCase):
                                                  scored_local_sample)
         discretized_weighted_scored_local_sample = \
             explainer._discretize_numeric(weighted_scored_local_sample)
-        lime = explainer._regress(discretized_weighted_scored_local_sample)
+
+        disc_row = pd.DataFrame(columns=self.X)
+        for name in self.X:
+            disc_row[name] = pd.cut(pd.Series(row[name]),
+                                    bins=explainer.bins_dict[name])
+
+        lime = explainer._regress(discretized_weighted_scored_local_sample,
+                                  h2o.H2OFrame(disc_row))
+        
         self.assertTrue(explainer.discretize)
         self.assertIsNotNone(lime)
         self.assertAlmostEqual(0.9121119123027541, explainer.lime_r2)
@@ -198,7 +206,8 @@ class TestLIMEExplainer(unittest.TestCase):
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
-        lime = explainer._regress(weighted_scored_local_sample)
+        lime = explainer._regress(weighted_scored_local_sample,
+                                  h2o.H2OFrame(pd.DataFrame(row).T))
         self.assertFalse(explainer.discretize)
         self.assertIsNotNone(lime)
         self.assertAlmostEqual(0.9649889709835218, explainer.lime_r2)
@@ -217,16 +226,17 @@ class TestLIMEExplainer(unittest.TestCase):
                                                   scored_local_sample)
         discretized_weighted_scored_local_sample = \
             explainer._discretize_numeric(weighted_scored_local_sample)
-        explainer.lime = \
-            explainer._regress(discretized_weighted_scored_local_sample)
 
         disc_row = pd.DataFrame(columns=self.X)
         for name in self.X:
             disc_row[name] = pd.cut(pd.Series(row[name]),
                                     bins=explainer.bins_dict[name])
 
-        rc = explainer._plot_local_contrib(h2o.H2OFrame(disc_row))
-        self.assertEqual(rc.shape, (36, 2))
+        explainer.lime = \
+            explainer._regress(discretized_weighted_scored_local_sample,
+                               h2o.H2OFrame(disc_row))
+
+        self.assertEqual(explainer.reason_code_values.shape, (36, 2))
 
     def test_plot_local_contrib_w_o_discretize(self):
 
@@ -240,10 +250,10 @@ class TestLIMEExplainer(unittest.TestCase):
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
         explainer.lime = \
-            explainer._regress(weighted_scored_local_sample)
+            explainer._regress(weighted_scored_local_sample,
+                               h2o.H2OFrame(pd.DataFrame(row).T))
 
-        rc = explainer._plot_local_contrib(h2o.H2OFrame(pd.DataFrame(row).T))
-        self.assertEqual(rc.shape, (26, 2))
+        self.assertEqual(explainer.reason_code_values.shape, (26, 2))
 
     def test_explain_w_discretize(self):
 
