@@ -288,8 +288,7 @@ class LIMEExplainer(object):
 
         # initialize Pandas DataFrame to store results
         local_contrib_frame = pd.DataFrame(columns=['Input',
-                                                    'Local Contribution',
-                                                    'Sign'])
+                                                    'Local Contribution'])
 
         # multiply values in row by local glm coefficients to local
         # contributions (reason codes)
@@ -309,8 +308,7 @@ class LIMEExplainer(object):
             if np.abs(contrib) > 0.0:
                 local_contrib_frame = \
                     local_contrib_frame.append({'Input': name,
-                                                'Local Contribution': contrib,
-                                                'Sign': contrib > 0},
+                                                'Local Contribution': contrib},
                                                ignore_index=True)
 
                 # sort
@@ -326,7 +324,6 @@ class LIMEExplainer(object):
                                            y='Local Contribution',
                                            kind='bar',
                                            title='Reason Codes',
-                                           color=''.join(top_n_local_contrib_frame.Sign.map({True: 'b', False: 'g'}).values),
                                            legend=False)
 
         return local_contrib_frame
@@ -360,13 +357,14 @@ class LIMEExplainer(object):
             for name in self.X:
                 disc_row[name] = pd.cut(pd.Series(row[name]),
                                         bins=self.bins_dict[name])
+
             if self.print_:
                 rc = self._plot_local_contrib(h2o.H2OFrame(disc_row))
-                print(rc[['Input', 'Local Contribution']])
+                print(rc)
 
         else:
 
             self.lime = self._regress(weighted_scored_local_sample)
             if self.print_:
                 rc = self._plot_local_contrib(h2o.H2OFrame(pd.DataFrame(row).T))
-                print(rc[['Input', 'Local Contribution']])
+                print(rc)

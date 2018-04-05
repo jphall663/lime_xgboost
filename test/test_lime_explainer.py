@@ -226,7 +226,7 @@ class TestLIMEExplainer(unittest.TestCase):
                                     bins=explainer.bins_dict[name])
 
         rc = explainer._plot_local_contrib(h2o.H2OFrame(disc_row))
-        self.assertEqual(rc.shape, (36, 3))
+        self.assertEqual(rc.shape, (36, 2))
 
     def test_plot_local_contrib_w_o_discretize(self):
 
@@ -243,7 +243,7 @@ class TestLIMEExplainer(unittest.TestCase):
             explainer._regress(weighted_scored_local_sample)
 
         rc = explainer._plot_local_contrib(h2o.H2OFrame(pd.DataFrame(row).T))
-        self.assertEqual(rc.shape, (26, 3))
+        self.assertEqual(rc.shape, (26, 2))
 
     def test_explain_w_discretize(self):
 
@@ -259,7 +259,6 @@ class TestLIMEExplainer(unittest.TestCase):
                                   X=self.X, model=self.model,
                                   discretize=False)
         explainer.explain(row_id)
-
 
     def tearDown(self):
         self.frame = None
