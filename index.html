@@ -46,7 +46,7 @@
 <p>Simple package for creating LIMEs for XGBoost</p>
 <dl class="class">
 <dt id="lime_xgboost.lime_explainer.LIMEExplainer">
-<em class="property">class </em><code class="descclassname">lime_xgboost.lime_explainer.</code><code class="descname">LIMEExplainer</code><span class="sig-paren">(</span><em>training_frame=None</em>, <em>X=None</em>, <em>model=None</em>, <em>N=None</em>, <em>discretize=None</em>, <em>quantiles=None</em>, <em>seed=None</em>, <em>print_=None</em>, <em>top_n=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lime_xgboost.lime_explainer.LIMEExplainer" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">lime_xgboost.lime_explainer.</code><code class="descname">LIMEExplainer</code><span class="sig-paren">(</span><em>training_frame=None</em>, <em>X=None</em>, <em>model=None</em>, <em>N=None</em>, <em>discretize=None</em>, <em>quantiles=None</em>, <em>seed=None</em>, <em>print_=None</em>, <em>top_n=None</em>, <em>intercept=None</em><span class="sig-paren">)</span><a class="headerlink" href="#lime_xgboost.lime_explainer.LIMEExplainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Basic framework for building Local, Interpretable, Model-agnostic
 Explanations (LIMEs) for XGBoost models. Supports regression and binomial
@@ -66,6 +66,8 @@ fitting a local linear model. Can increase local model
 accuracy. Boolean, default True.</li>
 <li><strong>quantiles</strong> &#8211; Number of bins to create in numeric variables. Integer,
 default 4.</li>
+<li><strong>intercept</strong> &#8211; Whether local linear models should include an intercept.
+Boolean, default True.</li>
 <li><strong>seed</strong> &#8211; Random seed for enhanced reproducibility. Integer, default
 12345.</li>
 <li><strong>print</strong> &#8211; Whether to print a table of local contributions (reason
@@ -77,6 +79,8 @@ to plot. Integer, default 5.</li>
 (reason codes) for <cite>model</cite> and row to be
 explained.</li>
 <li><strong>lime_r2</strong> &#8211; R<sup>2</sup> statistic for trained local linear model, float.</li>
+<li><strong>lime_pred</strong> &#8211; Prediction of trained local linear model for row of
+interest.</li>
 <li><strong>lime</strong> &#8211; Trained local linear model, H2OGeneralizedLinearEstimator.</li>
 <li><strong>bins_dict</strong> &#8211; Dictionary of bins used to discretize the LIME sample.</li>
 </ul>
