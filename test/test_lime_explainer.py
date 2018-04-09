@@ -113,7 +113,9 @@ class TestLIMEExplainer(unittest.TestCase):
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
         self.assertEqual(scored_local_sample.shape[1],
                          local_sample.shape[1] + 1)
         self.assertEqual(scored_local_sample.columns[-1], 'predict')
@@ -125,7 +127,9 @@ class TestLIMEExplainer(unittest.TestCase):
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
@@ -140,7 +144,10 @@ class TestLIMEExplainer(unittest.TestCase):
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
+
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
@@ -156,7 +163,9 @@ class TestLIMEExplainer(unittest.TestCase):
                                   X=self.X, model=self.model)
         N = explainer.N
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
@@ -174,7 +183,9 @@ class TestLIMEExplainer(unittest.TestCase):
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                  scored_local_sample)
@@ -202,7 +213,9 @@ class TestLIMEExplainer(unittest.TestCase):
                                   X=self.X, model=self.model,
                                   discretize=False)
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
@@ -220,7 +233,9 @@ class TestLIMEExplainer(unittest.TestCase):
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
@@ -245,7 +260,9 @@ class TestLIMEExplainer(unittest.TestCase):
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         local_sample = explainer._generate_local_sample(row)
-        scored_local_sample = explainer._score_local_sample(local_sample)
+        scored_local_sample = \
+            explainer._score_local_sample(local_sample,
+                                          row[local_sample.columns])
         weighted_scored_local_sample = \
             explainer._calculate_distance_weights(0,
                                                   scored_local_sample)
@@ -261,6 +278,9 @@ class TestLIMEExplainer(unittest.TestCase):
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model)
         explainer.explain(row_id)
+        self.assertAlmostEqual(explainer.lime_pred,
+                               explainer.lime.coef()['Intercept'] +
+                               explainer.reason_code_values['Local Contribution'].sum())
 
     def test_explain_w_o_discretize(self):
 
@@ -269,6 +289,21 @@ class TestLIMEExplainer(unittest.TestCase):
                                   X=self.X, model=self.model,
                                   discretize=False)
         explainer.explain(row_id)
+        self.assertAlmostEqual(explainer.lime_pred,
+                               explainer.lime.coef()['Intercept'] +
+                               explainer.reason_code_values['Local Contribution'].sum())
+
+    def test_explain_w_discretize_w_o_intercept(self):
+
+        row_id = 0
+        explainer = LIMEExplainer(training_frame=self.frame,
+                                  X=self.X, model=self.model,
+                                  discretize=True, intercept=False)
+        explainer.explain(row_id)
+        self.assertAlmostEqual(explainer.lime.coef()['Intercept'], 0)
+        self.assertAlmostEqual(explainer.lime_pred,
+                               explainer.lime.coef()['Intercept'] +
+                               explainer.reason_code_values['Local Contribution'].sum())
 
     def tearDown(self):
         self.frame = None
