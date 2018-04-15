@@ -1,6 +1,7 @@
 import unittest
 import h2o
 import numpy as np
+import operator
 import pandas as pd
 import xgboost as xgb
 from lime_xgboost.lime_explainer import LIMEExplainer
@@ -26,7 +27,7 @@ class TestLIMEExplainer(unittest.TestCase):
 
         # split data
         np.random.seed(seed)  # set random seed for reproducibility
-        split_ratio = 0.7     # 70%/30% train/test split
+        split_ratio = 0.7     # 70%/30% train/tests split
         split = np.random.rand(len(frame)) < split_ratio
         tr_frame = frame[split]
         v_frame = frame[~split]
@@ -60,7 +61,7 @@ class TestLIMEExplainer(unittest.TestCase):
         watchlist = [(dtrain, 'train'), (dvalid, 'eval')]
 
         # train model here so it is only trained once
-        # instead of at beginning of every test function
+        # instead of at beginning of every tests function
         bst = xgb.train(params,
                         dtrain,
                         10000,
@@ -68,8 +69,14 @@ class TestLIMEExplainer(unittest.TestCase):
                         early_stopping_rounds=50,
                         verbose_eval=True)
 
-        # save model to be reused in each test function
-        bst.save_model('test.model')
+        # print variable importance
+        for name, val in sorted(bst.get_fscore().items(),
+                                key=operator.itemgetter(1)):
+            if val != 0.0:
+                print(name, ': ', val)
+
+        # save model to be reused in each tests function
+        bst.save_model('tests.model')
 
         h2o.init()
 
@@ -81,7 +88,7 @@ class TestLIMEExplainer(unittest.TestCase):
         self.row_id = 'Id'
 
         bst = xgb.Booster({'nthread': 4})
-        bst.load_model('test.model')
+        bst.load_model('tests.model')
         self.model = bst
 
         self.frame = pd.read_csv('../data/train.csv')
@@ -94,6 +101,9 @@ class TestLIMEExplainer(unittest.TestCase):
 
         self.X = [name for name in self.frame.columns
                   if name not in [self.y, self.row_id]]
+
+        self.discretize = ['LotFrontage', 'MSSubClass', 'LotArea', 'YearBuilt',
+                           'GrLivArea']
 
     def test_generate_local_sample(self):
 
@@ -160,7 +170,8 @@ class TestLIMEExplainer(unittest.TestCase):
 
         row = self.frame.iloc[0, :]
         explainer = LIMEExplainer(training_frame=self.frame,
-                                  X=self.X, model=self.model)
+                                  X=self.X, model=self.model,
+                                  discretize=self.discretize)
         N = explainer.N
         local_sample = explainer._generate_local_sample(row)
         scored_local_sample = \
@@ -174,14 +185,15 @@ class TestLIMEExplainer(unittest.TestCase):
         self.assertEqual(discretized_weighted_scored_local_sample.shape,
                          (N, local_sample.shape[1] + 2))
         self.assertEqual(discretized_weighted_scored_local_sample[
-                             self.X].dtypes.unique()[0], 'category')
+                             self.discretize].dtypes.unique()[0], 'category')
         del explainer
 
     def test_regress_w_discretize(self):
 
         row = self.frame.iloc[0, :]
         explainer = LIMEExplainer(training_frame=self.frame,
-                                  X=self.X, model=self.model)
+                                  X=self.X, model=self.model,
+                                  discretize=self.discretize)
         local_sample = explainer._generate_local_sample(row)
         scored_local_sample = \
             explainer._score_local_sample(local_sample,
@@ -193,25 +205,26 @@ class TestLIMEExplainer(unittest.TestCase):
             explainer._discretize_numeric(weighted_scored_local_sample)
 
         disc_row = pd.DataFrame(columns=self.X)
-        for name in self.X:
+        for name in self.discretize:
             disc_row[name] = pd.cut(pd.Series(row[name]),
                                     bins=explainer.bins_dict[name])
+
+        not_in = list(set(self.X) - set(self.discretize))
+        disc_row[not_in] = row[not_in].values
 
         lime = explainer._regress(discretized_weighted_scored_local_sample,
                                   h2o.H2OFrame(disc_row))
         
         self.assertTrue(explainer.discretize)
         self.assertIsNotNone(lime)
-        self.assertAlmostEqual(0.9121119123027541, explainer.lime_r2)
-
+        self.assertAlmostEqual(0.9859272974096093, explainer.lime_r2)
         del explainer
 
     def test_regress_w_o_discretize(self):
 
         row = self.frame.iloc[0, :]
         explainer = LIMEExplainer(training_frame=self.frame,
-                                  X=self.X, model=self.model,
-                                  discretize=False)
+                                  X=self.X, model=self.model)
         local_sample = explainer._generate_local_sample(row)
         scored_local_sample = \
             explainer._score_local_sample(local_sample,
@@ -226,12 +239,13 @@ class TestLIMEExplainer(unittest.TestCase):
         self.assertAlmostEqual(0.9649889709835218, explainer.lime_r2)
         del explainer
 
-    def test_plot_local_contrib_w_discretize(self):
+    def test_local_contrib_w_discretize(self):
 
         row = self.frame.iloc[0, :]
 
         explainer = LIMEExplainer(training_frame=self.frame,
-                                  X=self.X, model=self.model)
+                                  X=self.X, model=self.model,
+                                  discretize=self.discretize)
         local_sample = explainer._generate_local_sample(row)
         scored_local_sample = \
             explainer._score_local_sample(local_sample,
@@ -243,17 +257,20 @@ class TestLIMEExplainer(unittest.TestCase):
             explainer._discretize_numeric(weighted_scored_local_sample)
 
         disc_row = pd.DataFrame(columns=self.X)
-        for name in self.X:
+        for name in self.discretize:
             disc_row[name] = pd.cut(pd.Series(row[name]),
                                     bins=explainer.bins_dict[name])
+        not_in = list(set(self.X) - set(self.discretize))
+        disc_row[not_in] = row[not_in].values
 
         explainer.lime = \
             explainer._regress(discretized_weighted_scored_local_sample,
                                h2o.H2OFrame(disc_row))
 
-        self.assertEqual(explainer.reason_code_values.shape, (36, 2))
+        self.assertEqual(explainer.reason_code_values.shape, (21, 2))
+        del explainer
 
-    def test_plot_local_contrib_w_o_discretize(self):
+    def test_local_contrib_w_o_discretize(self):
 
         row = self.frame.iloc[0, :]
 
@@ -271,39 +288,48 @@ class TestLIMEExplainer(unittest.TestCase):
                                h2o.H2OFrame(pd.DataFrame(row).T))
 
         self.assertEqual(explainer.reason_code_values.shape, (26, 2))
+        del explainer
 
     def test_explain_w_discretize(self):
 
         row_id = 0
         explainer = LIMEExplainer(training_frame=self.frame,
-                                  X=self.X, model=self.model)
+                                  X=self.X, model=self.model,
+                                  discretize=self.discretize)
         explainer.explain(row_id)
         self.assertAlmostEqual(explainer.lime_pred,
                                explainer.lime.coef()['Intercept'] +
                                explainer.reason_code_values['Local Contribution'].sum())
+        del explainer
 
     def test_explain_w_o_discretize(self):
 
         row_id = 0
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model,
-                                  discretize=False)
+                                  discretize=None)
         explainer.explain(row_id)
         self.assertAlmostEqual(explainer.lime_pred,
                                explainer.lime.coef()['Intercept'] +
                                explainer.reason_code_values['Local Contribution'].sum())
+        del explainer
+
+    """
 
     def test_explain_w_discretize_w_o_intercept(self):
 
         row_id = 0
         explainer = LIMEExplainer(training_frame=self.frame,
                                   X=self.X, model=self.model,
-                                  discretize=True, intercept=False)
+                                  discretize=self.discretize, intercept=False)
         explainer.explain(row_id)
         self.assertAlmostEqual(explainer.lime.coef()['Intercept'], 0)
         self.assertAlmostEqual(explainer.lime_pred,
                                explainer.lime.coef()['Intercept'] +
                                explainer.reason_code_values['Local Contribution'].sum())
+        del explainer
+
+    """
 
     def tearDown(self):
         self.frame = None

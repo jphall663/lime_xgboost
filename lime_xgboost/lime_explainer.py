@@ -36,13 +36,11 @@ class LIMEExplainer(object):
     :ivar X: List of XGBoost model inputs. Inputs must be numeric, mandatory.
     :ivar model: Trained XGBoost booster to be explained, mandatory.
     :ivar N: Size of LIME local, perturbed sample. Integer, default 10000.
-    :ivar discretize: Whether to discretize numeric inputs before
-                      fitting a local linear model. Can increase local model
-                      accuracy. Boolean, default True.
+    :ivar discretize: Numeric variables to discretize. List, default `X`.
     :ivar quantiles: Number of bins to create in numeric variables. Integer,
                      default 4.
     :ivar intercept: Whether local linear models should include an intercept.
-                     Boolean, default True.
+                     Boolean, default True. (EXPERIMENTAL)
     :ivar seed: Random seed for enhanced reproducibility. Integer, default
                 12345.
     :ivar print_: Whether to print a table of local contributions (reason
@@ -95,7 +93,7 @@ class LIMEExplainer(object):
         if discretize is not None:
             self.discretize = discretize
         else:
-            self.discretize = True
+            self.discretize = None
 
         if quantiles is not None:
             self.quantiles = quantiles
@@ -134,7 +132,7 @@ class LIMEExplainer(object):
 
         self.bins_dict = {}
 
-        h2o.no_progress()  # do not show h2o progress bars
+        h2o.no_progress() # do not show h2o progress bars
 
     def _generate_local_sample(self, row):
 
@@ -249,16 +247,16 @@ class LIMEExplainer(object):
                          columns=columns)
 
         # save bins for later use and apply to current sample
-        for name in self.X:
+        for name in self.discretize:
             ser, bins = pd.qcut(weighted_local_sample.loc[:, name],
-                                self.quantiles,
-                                retbins=True)
+                                self.quantiles, retbins=True)
             discretized_weighted_local_sample.loc[:, name] = ser
             self.bins_dict[name] = bins
 
         # fill in remaining columns
-        discretized_weighted_local_sample.loc[:, ['predict', 'distance']] = \
-            weighted_local_sample.loc[:, ['predict', 'distance']]
+        not_in = list(set(columns)-set(self.discretize))
+        discretized_weighted_local_sample.loc[:, not_in] = \
+            weighted_local_sample.loc[:, not_in]
 
         return discretized_weighted_local_sample
 
@@ -280,13 +278,17 @@ class LIMEExplainer(object):
 
         """
 
+        # convert to h2o and split
+        weighted_local_sample_h2o = h2o.H2OFrame(weighted_local_sample)
+        weighted_local_sample.to_csv('weighted_local_sample.csv')
+
         # initialize
         lime = H2OGeneralizedLinearEstimator(lambda_search=True,
                                              weights_column='distance',
                                              intercept=self.intercept,
                                              seed=self.seed)
+
         # train
-        weighted_local_sample_h2o = h2o.H2OFrame(weighted_local_sample)
         lime.train(x=self.X, y='predict',
                    training_frame=weighted_local_sample_h2o)
 
@@ -310,6 +312,7 @@ class LIMEExplainer(object):
                 name = '.'.join([str(key), str(level)])
                 if name in lime.coef():
                     contrib = lime.coef()[name]
+
             else:
                 name = key
                 if name in lime.coef():
@@ -323,10 +326,11 @@ class LIMEExplainer(object):
                                                     contrib},
                                                    ignore_index=True)
 
-                # sort
-                self.reason_code_values.sort_values(by='Local Contribution',
-                                                    inplace=True)
-                self.reason_code_values.reset_index(inplace=True, drop=True)
+        # sort
+        self.reason_code_values.sort_values(by='Local Contribution',
+                                            inplace=True)
+
+        self.reason_code_values.reset_index(inplace=True, drop=True)
 
         return lime
 
@@ -366,21 +370,22 @@ class LIMEExplainer(object):
             self._calculate_distance_weights(row_id,
                                              scored_local_sample)
 
-        if self.discretize:
+        if self.discretize is not None:
 
             discretized_weighted_local_sampled = \
                 self._discretize_numeric(weighted_scored_local_sample)
 
             disc_row = pd.DataFrame(columns=self.X)
-            for name in self.X:
+            for name in self.discretize:
                 disc_row[name] = pd.cut(pd.Series(row[name]),
                                         bins=self.bins_dict[name])
+            not_in = list(set(self.X) - set(self.discretize))
+            disc_row[not_in] = row[not_in].values
 
             self.lime = self._regress(discretized_weighted_local_sampled,
                                       h2o.H2OFrame(disc_row))
 
             if self.print_:
-                self._plot_local_contrib()
                 print('Approximate Local Contributions:')
                 print(self.reason_code_values)
 
@@ -389,6 +394,5 @@ class LIMEExplainer(object):
             self.lime = self._regress(weighted_scored_local_sample,
                                       h2o.H2OFrame(pd.DataFrame(row).T))
             if self.print_:
-                self._plot_local_contrib()
                 print('Approximate Local Contributions:')
                 print(self.reason_code_values)

@@ -4,4 +4,4 @@ __pycache__
 data/*.csv
 data/*.xls
 notebooks/.ipynb_checkpoints
-test/test.model
+tests/tests.model
