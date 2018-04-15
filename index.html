@@ -61,13 +61,11 @@ mandatory.</li>
 <li><strong>X</strong> &#8211; List of XGBoost model inputs. Inputs must be numeric, mandatory.</li>
 <li><strong>model</strong> &#8211; Trained XGBoost booster to be explained, mandatory.</li>
 <li><strong>N</strong> &#8211; Size of LIME local, perturbed sample. Integer, default 10000.</li>
-<li><strong>discretize</strong> &#8211; Whether to discretize numeric inputs before
-fitting a local linear model. Can increase local model
-accuracy. Boolean, default True.</li>
+<li><strong>discretize</strong> &#8211; Numeric variables to discretize. List, default <cite>X</cite>.</li>
 <li><strong>quantiles</strong> &#8211; Number of bins to create in numeric variables. Integer,
 default 4.</li>
 <li><strong>intercept</strong> &#8211; Whether local linear models should include an intercept.
-Boolean, default True.</li>
+Boolean, default True. (EXPERIMENTAL)</li>
 <li><strong>seed</strong> &#8211; Random seed for enhanced reproducibility. Integer, default
 12345.</li>
 <li><strong>print</strong> &#8211; Whether to print a table of local contributions (reason
