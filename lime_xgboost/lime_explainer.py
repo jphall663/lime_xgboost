@@ -178,7 +178,7 @@ class LIMEExplainer(object):
         scored_local_sample.columns = ['predict']
 
         print('\nModel Prediction: %.2f' % self.model.predict(xgb.DMatrix(
-            pd.DataFrame(row).T))[0])
+            pd.DataFrame(pd.to_numeric(row)).T))[0])
 
         return pd.concat([local_sample, scored_local_sample], axis=1)
 
@@ -280,7 +280,6 @@ class LIMEExplainer(object):
 
         # convert to h2o and split
         weighted_local_sample_h2o = h2o.H2OFrame(weighted_local_sample)
-        weighted_local_sample.to_csv('weighted_local_sample.csv')
 
         # initialize
         lime = H2OGeneralizedLinearEstimator(lambda_search=True,
@@ -385,14 +384,12 @@ class LIMEExplainer(object):
             self.lime = self._regress(discretized_weighted_local_sampled,
                                       h2o.H2OFrame(disc_row))
 
-            if self.print_:
-                print('Approximate Local Contributions:')
-                print(self.reason_code_values)
-
         else:
 
             self.lime = self._regress(weighted_scored_local_sample,
                                       h2o.H2OFrame(pd.DataFrame(row).T))
-            if self.print_:
-                print('Approximate Local Contributions:')
-                print(self.reason_code_values)
+
+        if self.print_:
+            print('Approximate Local Contributions:')
+            print(self.reason_code_values)
+            print(self._plot_local_contrib())
