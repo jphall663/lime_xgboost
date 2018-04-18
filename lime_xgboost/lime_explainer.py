@@ -337,16 +337,21 @@ class LIMEExplainer(object):
 
         """ Plots local contributions (reason codes) in a bar chart. """
 
-        # plot top and bottom local contribs
-        top_n_local_contrib_frame = \
-            self.reason_code_values.iloc[:self.top_n, :].\
-            append(self.reason_code_values.iloc[-self.top_n:, :])
-        _ = top_n_local_contrib_frame.plot(x='Input',
-                                           y='Local Contribution',
-                                           kind='bar',
-                                           title='Reason Codes',
-                                           legend=False,
-                                           color='b')
+        local_contrib_plot_frame = self.reason_code_values
+
+        if local_contrib_plot_frame.shape[0] > self.top_n * 2:
+
+            # plot top and bottom local contribs
+            local_contrib_plot_frame = \
+                self.reason_code_values.iloc[:self.top_n, :].\
+                append(self.reason_code_values.iloc[-self.top_n:, :])
+
+        _ = local_contrib_plot_frame.plot(x='Input',
+                                          y='Local Contribution',
+                                          kind='bar',
+                                          title='Reason Codes',
+                                          legend=False,
+                                          color='b')
 
     def explain(self, row_id):
 
